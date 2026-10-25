@@ -1,7 +1,5 @@
 export class HashMap {
     constructor() {
-        this.key = key;
-        this.value = value;
         this.capacity = 16;
         this.loadFactor = 0.75;
         this.buckets = Array.from( {length: this.capacity} , () => []);
@@ -27,11 +25,89 @@ export class HashMap {
         }
     }
 
-    set(key, value) { 
-        let bucket = this.hash(key);
-
+    getBucket(key) {
+        const bucket = this.hash(key);
+        this.checkIndex(bucket);
+        return this.buckets[bucket];
     }
 
+    findEntry(key) {
+        const bucketArray = this.getBucket(key);
+        return bucketArray.find((pair) => pair.key === key);
+    }
 
+    set(key, value) { 
+        const bucket = this.getBucket(key);
+        const entry = bucket.find((pair) => pair.key === key);
+
+        if (entry) {
+            entry.value = value;
+        } else {
+            bucket.push({key, value});
+            this.size++;
+        }
+
+        if (this.size / this.capacity > this.loadFactor) {
+            this.resize();
+        }
+    }
+
+    resize() {
+        const entries = this.entries();
+        this.capacity *= 2;
+        this.buckets = Array.from( {length: this.capacity} , () => []);
+        this.size = 0;
+
+        for (const [key, value] of entries) {
+            this.set(key, value);
+        }
+    }
+
+    get(key) {
+        return this.findEntry(key)?.value;
+    }
+
+    has(key) {
+        const entry = this.findEntry(key);
+        if (entry) {
+            return true;
+        }
+        return false;
+    }
+
+    remove(key) {
+        const bucket = this.getBucket(key);
+        const index = bucket.findIndex((pair) => pair.key === key);
+
+        if (index !== -1) {
+            bucket.splice(index, 1);
+            this.size--;
+            return true;
+        }
+
+        return false;
+    }
+
+    length() {
+        return this.size;
+    }
+
+    clear() {
+        this.capacity = 16;
+        this.buckets = Array.from( {length: this.capacity} , () => []);
+        this.size = 0;
+    }
+
+    entries() {
+        return this.buckets.flatMap((bucket) => bucket.map((pair) => [pair.key, pair.value]));
+    }
+
+    keys() {
+        return this.entries().map(([key]) => key);
+    }
+
+    values() {
+        return this.entries().map(([, value]) => value);
+    }
 
 }
